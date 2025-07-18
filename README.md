@@ -1,8 +1,10 @@
 # Estructura_Scaffold
 
-<img width="301" height="581" alt="image" src="https://github.com/user-attachments/assets/ccac4db0-8e53-4df6-8a66-ec142b8311fc" /> 
-<img width="273" height="526" alt="image" src="https://github.com/user-attachments/assets/ba749619-fd5e-4285-93cc-d85f63bb7266" />
-<img width="294" height="569" alt="image" src="https://github.com/user-attachments/assets/680e89be-2aed-4b3c-a4d6-7f71ad1df1ca" />
+<img width="423" height="789" alt="image" src="https://github.com/user-attachments/assets/7e9b055e-142f-4372-9617-b4f308b305f8" />
+<img width="439" height="794" alt="image" src="https://github.com/user-attachments/assets/f851c5fc-bfb3-417b-af68-01e858967328" /> 
+<img width="456" height="810" alt="image" src="https://github.com/user-attachments/assets/78d6bd6b-7882-4207-87be-cbb93410b2bf" />
+
+
 
 # 🧮 Flutter Calculator App
 
