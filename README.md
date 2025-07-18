@@ -45,9 +45,6 @@ Una calculadora simple y elegante hecha con Flutter. Esta aplicación incluye:
 
 ---
 
-## 📦 Dependencias
-
-Este proyecto usa únicamente las dependencias estándar de Flutter.
 
 ```yaml
 flutter:
