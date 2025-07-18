@@ -30,10 +30,142 @@ class _CalculatorHomePageState extends State<CalculatorHomePage> {
   String _operand = "";
   List<String> _history = [];
   int _selectedIndex = 0;
+  // MCP: Sugerencia de autocompletado
+  String _suggestion = "";
 
   // Clave global para el Scaffold, necesaria para abrir el endDrawer programáticamente
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  // MCP: Genera una sugerencia de operación completa
+  void _updateSuggestion() {
+    if (_currentNumber.isNotEmpty && _operand.isNotEmpty) {
+      double num2 = double.tryParse(_currentNumber) ?? 0;
+      double result = 0;
+      if (_operand == "+") {
+        result = _num1 + num2;
+      } else if (_operand == "-") {
+        result = _num1 - num2;
+      } else if (_operand == "*") {
+        result = _num1 * num2;
+      } else if (_operand == "/") {
+        if (num2 != 0) {
+          result = _num1 / num2;
+        } else {
+          _suggestion = "Error: División por cero";
+          setState(() {});
+          return;
+        }
+      }
+      _suggestion = '${_num1.toString()} $_operand ${num2.toString()} = ${result.toString()}';
+    } else {
+      _suggestion = "";
+    }
+    setState(() {});
+  }
+
+  // MCP: Sugerencia de autocompletado para operaciones simples
+  String _autoCompleteSuggestion = "";
+
+  void _updateAutoCompleteSuggestion() {
+    // Detecta si el usuario ha escrito un número y un operador, pero no el segundo número
+    final regex = RegExp(r'^(\d+(?:\.\d+)?)([+\-*/])$');
+    final match = regex.firstMatch(_output);
+    if (match != null) {
+      final num1 = double.tryParse(match.group(1)!);
+      final op = match.group(2)!;
+      if (num1 != null) {
+        double num2 = num1; // Sugiere repetir el número
+        double result = 0;
+        switch (op) {
+          case '+':
+            result = num1 + num2;
+            break;
+          case '-':
+            result = num1 - num2;
+            break;
+          case '*':
+            result = num1 * num2;
+            break;
+          case '/':
+            result = num2 != 0 ? num1 / num2 : double.nan;
+            break;
+        }
+        if (op == '/' && num2 == 0) {
+          _autoCompleteSuggestion = "Error: División por cero";
+        } else {
+          _autoCompleteSuggestion = '${num1.toString()}$op${num2.toString()}=${result.toString()}';
+        }
+      } else {
+        _autoCompleteSuggestion = "";
+      }
+    } else {
+      _autoCompleteSuggestion = "";
+    }
+    setState(() {});
+  }
+
+  // MCP: Sugerencias múltiples de autocompletado
+  List<String> _autoCompleteSuggestions = [];
+  int? _selectedSuggestionIndex;
+
+  void _updateAutoCompleteSuggestions() {
+    _autoCompleteSuggestions.clear();
+    _selectedSuggestionIndex = null;
+    final regex = RegExp(r'^(\d+(?:\.\d+)?)([+\-*/])$');
+    final match = regex.firstMatch(_output);
+    if (match != null) {
+      final num1 = double.tryParse(match.group(1)!);
+      final op = match.group(2)!;
+      if (num1 != null) {
+        // Sugerencias: repetir el número, usar 0, usar 1, usar 10
+        final nums = [num1, 0, 1, 10];
+        for (var num2 in nums) {
+          double result = 0;
+          switch (op) {
+            case '+':
+              result = num1 + num2;
+              break;
+            case '-':
+              result = num1 - num2;
+              break;
+            case '*':
+              result = num1 * num2;
+              break;
+            case '/':
+              result = num2 != 0 ? num1 / num2 : double.nan;
+              break;
+          }
+          if (op == '/' && num2 == 0) {
+            _autoCompleteSuggestions.add("${num1.toString()}$op${num2.toString()}=Error: División por cero");
+          } else {
+            _autoCompleteSuggestions.add("${num1.toString()}$op${num2.toString()}=${result.toString()}");
+          }
+        }
+      }
+    }
+    setState(() {});
+  }
+
+  void _selectSuggestion(int index) {
+    if (index >= 0 && index < _autoCompleteSuggestions.length) {
+      final suggestion = _autoCompleteSuggestions[index];
+      // Extraer el segundo número de la sugerencia seleccionada
+      final regex = RegExp(r'^(\d+(?:\.\d+)?)([+\-*/])(\d+(?:\.\d+)?).*');
+      final match = regex.firstMatch(suggestion);
+      if (match != null) {
+        _num1 = double.parse(match.group(1)!);
+        _operand = match.group(2)!;
+        _currentNumber = match.group(3)!;
+        // Mostrar el número como entero si no tiene decimales
+        String num1Str = _num1 % 1 == 0 ? _num1.toInt().toString() : _num1.toString();
+        String num2Str = double.parse(_currentNumber) % 1 == 0 ? double.parse(_currentNumber).toInt().toString() : _currentNumber;
+        _output = "${num1Str}${_operand}${num2Str}";
+        _selectedSuggestionIndex = index;
+        _updateSuggestion();
+      }
+    }
+    setState(() {});
+  }
 
   void _buttonPressed(String buttonText) {
     setState(() {
@@ -50,7 +182,9 @@ class _CalculatorHomePageState extends State<CalculatorHomePage> {
           _num1 = double.parse(_currentNumber);
           _operand = buttonText;
           _currentNumber = "";
-          _output = _num1.toString() + _operand;
+          // Mostrar el número como entero si no tiene decimales y el usuario no ingresó punto
+          String num1Str = _currentNumber.contains('.') ? _num1.toString() : (_num1 % 1 == 0 ? _num1.toInt().toString() : _num1.toString());
+          _output = num1Str + _operand;
         } else if (_operand.isNotEmpty && _output.isNotEmpty) {
           _operand = buttonText;
           if (_output.endsWith("+") ||
@@ -85,12 +219,14 @@ class _CalculatorHomePageState extends State<CalculatorHomePage> {
               return;
             }
           }
+          String num1Str = _num1 % 1 == 0 ? _num1.toInt().toString() : _num1.toString();
+          String num2Str = num2 % 1 == 0 ? num2.toInt().toString() : num2.toString();
           currentCalculation =
-          '${_num1.toString()} $_operand ${num2.toString()} = ${result.toString()}';
+          '${num1Str} $_operand ${num2Str} = ${result.toString()}';
           _history.add(currentCalculation);
 
-          _output = result.toString();
-          _currentNumber = result.toString();
+          _output = result % 1 == 0 ? result.toInt().toString() : result.toString();
+          _currentNumber = _output;
           _operand = "";
           _num1 = 0;
         }
@@ -118,6 +254,9 @@ class _CalculatorHomePageState extends State<CalculatorHomePage> {
         }
       }
     });
+    // MCP: Actualiza la sugerencia después de cada pulsación
+    _updateSuggestion();
+    _updateAutoCompleteSuggestions();
   }
 
   Widget _buildButton(String buttonText,
@@ -162,6 +301,63 @@ class _CalculatorHomePageState extends State<CalculatorHomePage> {
             ),
           ),
         ),
+        // MCP: Mostrar sugerencia debajo del display
+        if (_suggestion.isNotEmpty)
+          Container(
+            alignment: Alignment.centerRight,
+            padding: EdgeInsets.symmetric(horizontal: 12.0),
+            child: Text(
+              _suggestion,
+              style: TextStyle(
+                fontSize: 20.0,
+                color: Colors.grey[700],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+        // MCP: Mostrar sugerencias debajo del display principal
+        if (_autoCompleteSuggestions.isNotEmpty)
+          Container(
+            alignment: Alignment.centerRight,
+            padding: EdgeInsets.symmetric(horizontal: 12.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: List.generate(_autoCompleteSuggestions.length, (i) {
+                final selected = _selectedSuggestionIndex == i;
+                return GestureDetector(
+                  onTap: () => _selectSuggestion(i),
+                  child: Container(
+                    margin: EdgeInsets.symmetric(vertical: 4.0),
+                    padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                    decoration: BoxDecoration(
+                      color: selected ? Colors.blue[300] : Colors.blue[50],
+                      border: Border.all(color: Colors.blue, width: selected ? 2 : 1),
+                      boxShadow: selected
+                          ? [BoxShadow(color: Colors.blueAccent.withOpacity(0.2), blurRadius: 6, offset: Offset(0, 2))]
+                          : [],
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.touch_app, color: selected ? Colors.blueAccent : Colors.blueGrey, size: 18),
+                        SizedBox(width: 6),
+                        Text(
+                          _autoCompleteSuggestions[i],
+                          style: TextStyle(
+                            fontSize: 16.0,
+                            color: selected ? Colors.blueAccent : Colors.blueGrey,
+                            fontStyle: FontStyle.italic,
+                            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
         Expanded(
           child: Divider(),
         ),
