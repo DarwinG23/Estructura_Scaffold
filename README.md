@@ -16,11 +16,6 @@ Una calculadora simple y elegante hecha con Flutter. Esta aplicación incluye:
 - Barra de navegación inferior para acceder a diferentes secciones.
 - Configuración rápida accesible mediante un menú lateral derecho (aún no implementado completamente).
 
----
-
-## ✨ Capturas de pantalla
-
-*(Agrega aquí imágenes si las tienes, por ejemplo)*
 
 ---
 
